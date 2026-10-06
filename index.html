@@ -90,15 +90,15 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
   <div class="hero">
     <div class="eyebrow">LLM reliability engineer</div>
     <h1>I fix LLM products that work in the demo and break in production.</h1>
-    <p class="lede">Reliability, evals, cost and latency for AI agents. Since 2025 I have built and run Flora, a multi-agent voice companion for seniors, in production: about 15 repositories, 18 containers, three LLM providers with automatic fallback, EU-hosted. Most of what I fixed returned HTTP 200.</p>
+    <p class="lede">Reliability, evals, cost and latency for AI agents. Since 2025 I have built and run Flora, a multi-agent voice companion for seniors, in production: about 15 repositories, 18 containers, DeepSeek and Mistral models with host failover, EU-hosted. Most of what I fixed returned HTTP 200.</p>
     <div class="cta">
       <a class="btn primary" href="mailto:danieldantemdv@gmail.com?subject=LLM%20audit">Book an audit</a>
       <a class="btn" href="#work">See the numbers</a>
     </div>
     <div class="stats">
-      <div class="stat"><b>6.5 s &rarr; 1.26 s</b><span>classifier p50, on every message</span></div>
-      <div class="stat"><b>&minus;61% tokens</b><span>one misplaced API parameter</span></div>
-      <div class="stat"><b>~5x input cost</b><span>caching silently dropped by a gateway</span></div>
+      <div class="stat"><b>~6.5 s &rarr; 1.26 s</b><span>classifier p50 in production, after a model change</span></div>
+      <div class="stat"><b>&minus;61% tokens</b><span>typical prompts, from where one parameter was placed</span></div>
+      <div class="stat"><b>0% &rarr; 99%</b><span>prompt cache hits, after fixing our client layer</span></div>
     </div>
   </div>
 
@@ -115,89 +115,94 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
 
   <section id="work">
     <h2>Case studies</h2>
-    <p class="sub">All measured on Flora in production. Vendors are described generically on purpose.</p>
+    <p class="sub">All measured on Flora. Each result depended on Flora's situation and the models available to it at the time, so read them as a method, not a promise of the same number on another system. Sample sizes are given; estimates are labelled as estimates.</p>
 
     <article class="case" id="classifier-latency">
       <span class="tag">LATENCY</span>
-      <h3>A classifier on every message: p50 6.5 s to 1.26 s</h3>
-      <h4>Problem</h4>
-      <p>Every user message went through an intent and mood classifier before the reply could start. Median 6.5 seconds, paid on every turn.</p>
+      <h3>A classifier on every message: production p50 from about 6.5 s to 1.26 s</h3>
+      <h4>Context</h4>
+      <p>Every user message goes through an intent and mood classifier before Flora starts replying. It ran on Mistral Small, at a production median of about 6.5 s.</p>
       <h4>Diagnosis</h4>
-      <p>The call was decode-bound: latency tracked output length almost perfectly. The prompt forced a chain-of-thought into the JSON, and the model wrote that reasoning <em>after</em> the decision fields it was meant to inform. Seconds of tokens, informing nothing.</p>
+      <p>The call was decode-bound: its time tracked output length. The prompt also asked for a chain-of-thought inside the JSON, and on the candidate model that reasoning was written <em>after</em> the decision fields, so it could not inform them.</p>
       <h4>What I did</h4>
-      <p>Moved the classifier to a faster model, removed the forced reasoning for that provider only, pinned a strict output schema, and added a fallback to the previous model on any error or empty reply, with an alert. Validated on a labelled harness of about 120 cases, sampled repeatedly to separate change from noise.</p>
-      <div class="delta"><span class="from">6,503 ms</span><span class="to">1.26 s</span><span class="what">p50 &middot; output 825 &rarr; ~230 tokens &middot; 0 fallbacks over the first ~60 production turns</span></div>
+      <p>Moved this one classifier to DeepSeek V4 Flash on an EU host, removed the chain-of-thought for that model only (Mistral writes fields in schema order, so it keeps it there), pinned a strict output schema, and kept Mistral as a fallback with an alert. Validated on a 130-case labelled set at n=5, re-running borderline cases.</p>
+      <ul>
+        <li>Labelled set: p50 2,409 ms to 589 ms. Most of that came from the faster model; removing the unused chain-of-thought cut a further ~36%. Output went from about 825 to about 230 tokens.</li>
+        <li>Accuracy: 7 cases fixed, 1 regressed (a pacing case, accepted after analysis); all safety cases stable.</li>
+        <li>Honest limit: this worked because a faster model of equal quality existed for this task. Prompt caching was not the lever here; reading the prompt was only ~370 ms of the call.</li>
+      </ul>
+      <div class="delta"><span class="from">~6.5 s</span><span class="to">1.26 s</span><span class="what">production p50 &middot; 0 fallbacks over the first ~60 turns</span></div>
     </article>
 
     <article class="case" id="token-inflation">
       <span class="tag">COST &middot; LATENCY</span>
-      <h3>One misplaced parameter made the model write 3x more</h3>
-      <h4>Problem</h4>
-      <p>The reply model was slow and hitting its timeout. Nothing was erroring.</p>
+      <h3>Where one parameter was placed: &minus;61% output tokens</h3>
+      <h4>Context</h4>
+      <p>Flora's reply model (DeepSeek V4 Flash) was getting slower and hitting its timeout. Nothing errored.</p>
       <h4>Diagnosis</h4>
-      <p>The reasoning-effort parameter sat at the top level of the request. On that provider, that position inflated generation instead of setting it. Nothing in the response said so; only the output token counts did.</p>
+      <p>The reasoning-effort parameter was sent at the top level of the request. On our provider, that placement produced much longer generations than the same value nested where the model's chat template reads it. Only the token counts showed it.</p>
       <h4>What I did</h4>
-      <p>A controlled A/B on the request shape (top-level, nested, absent) using real production prompts, then three independent quality gates before shipping.</p>
+      <p>An A/B on the request shape with real production prompts, interleaved, then three quality checks.</p>
       <ul>
-        <li>Worst-case prompt, n=5 per arm: median output 12,429 to 3,259 tokens. The distributions did not overlap.</li>
-        <li>Quality held: persona suite 15/15 vs 15/15, reasoning suites 25/29 vs 24/29, blind comparison on 11 real conversations at parity.</li>
-        <li>The trap: deleting the parameter instead of moving it returned empty answers in 4 of 5 short prompts.</li>
+        <li>One heavy prompt showed a bigger gap (12,429 to 3,259 tokens, n=5 per arm). It was an outlier, so the typical figure below is the one that counts.</li>
+        <li>Quality: persona suite 15/15 on both arms, reasoning suites 25/29 vs 24/29, blind comparison on 11 real conversations 7 to 4. That is no detectable regression, not an improvement.</li>
+        <li>Part of the gain is that the model writes its long self-check less often. I track that rate as the risk signal.</li>
       </ul>
       <div class="delta"><span class="from">5,865 tok &middot; 21.5 s</span><span class="to">2,296 tok &middot; 9.1 s</span><span class="what">typical prompts, n=12 per arm: &minus;61% tokens, &minus;57% latency</span></div>
     </article>
 
     <article class="case" id="silent-200s">
       <span class="tag">SILENT FAILURES &middot; COST</span>
-      <h3>Silent 200s: settings that never reached the model</h3>
-      <h4>Problem</h4>
-      <p>An LLM gateway accepted our requests, returned HTTP 200, and silently dropped settings that mattered.</p>
+      <h3>Evaluating a gateway: settings accepted, not applied</h3>
+      <h4>Context</h4>
+      <p>We evaluated routing the classifier stack through an LLM gateway (one key, many providers).</p>
       <h4>What I measured</h4>
       <ul>
-        <li><b>Prompt caching.</b> Direct to the provider, 2,288 of 2,311 prompt tokens were served from cache on repeat calls. Through the gateway, three identical calls had byte-identical cost: the cache key never reached the upstream. About 5x the input price per call, on a path making 12 to 15 calls per user turn.</li>
-        <li><b>Latency.</b> n=20 per arm, interleaved: direct p50 4,813 ms vs gateway 6,232 ms (+29%).</li>
-        <li><b>Reasoning.</b> On one route, 12 different request shapes all returned zero reasoning, while the catalog claimed support. A catalog flag is not evidence; a live trace is.</li>
-        <li><b>Our own SDK layer</b> overwrote the cache key before sending. After the fix, cache hits went from 0% to 99% (4,030 of 4,072 tokens).</li>
+        <li><b>Prompt caching.</b> Direct, 2,288 of 2,311 prompt tokens came from cache on repeat calls. Through the gateway, three identical calls reported identical cost, so the cache key was accepted but not applied. On a path making 12 to 15 calls per user turn, I estimated roughly 5x the input cost (from cache pricing, not from a bill).</li>
+        <li><b>Latency.</b> n=20 per arm, interleaved, through the real classifier: p50 4,813 ms direct vs 6,232 ms via the gateway (+29%).</li>
+        <li><b>Reasoning.</b> On another gateway route, 12 different request shapes all returned no reasoning, although the catalog listed reasoning support. A catalog flag is not evidence; a live trace is.</li>
       </ul>
-      <h4>What I did</h4>
-      <p>Probes that verify each setting on the wire with production-sized prompts, tests that fail if a parameter silently stops working, and the direct route kept. This became <a href="https://github.com/danidante/llm-wire-check">llm-wire-check</a>.</p>
-      <div class="delta"><span class="from">0% cached</span><span class="to">99% cached</span><span class="what">after fixing the client layer &middot; gateway rejected on measured cost and latency</span></div>
+      <h4>Decision, and a fix in our own code</h4>
+      <p>Kept the direct route. Separately, a client-library layer in our code was overwriting the cache key before sending; after fixing it, cache hits on that call went from 0% to 99%. The probing method became <a href="https://github.com/danidante/llm-wire-check">llm-wire-check</a>.</p>
+      <div class="delta"><span class="from">0% cached</span><span class="to">99% cached</span><span class="what">4,030 of 4,072 prompt tokens, after the client-layer fix</span></div>
     </article>
 
     <article class="case" id="eu-migration">
-      <span class="tag">MIGRATION &middot; RESILIENCE</span>
-      <h3>Off OpenAI and onto EU providers, with a three-host fallback chain</h3>
-      <h4>Problem</h4>
-      <p>Remove US model vendors from a path that handles seniors' personal conversations, without losing quality on safety-critical flows: medication reminders, consent, destructive task edits.</p>
+      <span class="tag">MIGRATION</span>
+      <h3>Moving off OpenAI to EU-hosted models</h3>
+      <h4>Context</h4>
+      <p>Flora talks with seniors about personal matters. The goal was no US model vendor in that path, without losing quality on safety-critical flows: medication reminders, consent, destructive task edits.</p>
       <h4>What I did</h4>
-      <p>Migrated every GPT call site in phases with one rule: extraction and classification to Mistral, text generation to DeepSeek, each site with a safe fallback (block, skip, or keep the original) when the model fails. For the reply model, a fallback chain across three independent hosts that fits inside a hard turn deadline.</p>
+      <p>Migrated every GPT call in phases with one rule: extraction and classification to Mistral Small, text generation to DeepSeek V4 Flash. Every call site got a safe fallback when the model fails (block, skip, or keep the original). The reply model also fails over across a chain of hosts.</p>
       <ul>
-        <li>Supervisor router: p50 379 ms, p95 465 ms. Adversarial routing set 29/30, fixing a stable safety gap the old model had.</li>
-        <li>Fallback chain, first production read (n=14, early sample): p90 26.5 s to 16.3 s.</li>
+        <li>Supervisor router on Mistral Small: p50 379 ms, p95 465 ms.</li>
+        <li>OpenAI fully removed: no GPT model, key or identifier left.</li>
+        <li>Honest limit: the host fallback covers a host failing. When the shared upstream model slows down, some turns still time out; that is still open.</li>
       </ul>
-      <div class="delta"><span class="from">max 103.3 s</span><span class="to">max 24.9 s</span><span class="what">reply turn tail after the fallback chain &middot; OpenAI fully removed</span></div>
+      <div class="delta"><span class="from">GPT</span><span class="to">29/30</span><span class="what">new adversarial routing set (12/12 on the original set); the previous model routed abusive messages into the task pipeline</span></div>
     </article>
 
     <article class="case" id="evals">
       <span class="tag">EVALS</span>
       <h3>Making the eval suite tell the truth</h3>
-      <h4>Problem</h4>
+      <h4>Context</h4>
       <p>The test suite reported regressions that were not there, and passes that were not real.</p>
       <h4>What I found and fixed</h4>
       <ul>
         <li>32 suites, every safety suite included, failed all their cases because of one stale mock. Wiring, not a regression.</li>
-        <li>A suite passed 11/11 with zero real model calls: a missing key made the classifier return its default, and every "expect false" assertion passed vacuously.</li>
-        <li>Measured the noise floor: at n=9, borderline cases spread 0.44, above the 0.34 regression threshold. Added confirmation re-runs.</li>
+        <li>A suite passed 11/11 with zero real model calls: a missing API key made the classifier return its default, so every "expect false" assertion passed vacuously.</li>
+        <li>Measured the harness against itself: two runs of an identical prompt disagreed on 5 cases at n=3, and at n=9 borderline cases still spread 0.44 against a 0.34 regression threshold. Added confirmation re-runs.</li>
       </ul>
-      <div class="delta"><span class="from">9/9</span><span class="to">blocked</span><span class="what">the harness caught a faster prompt that took two safety cases from 9/9 to 0/9. It never shipped.</span></div>
+      <div class="delta"><span class="from">9/9</span><span class="to">blocked</span><span class="what">the harness caught a faster prompt that took two safety cases to 0/9. It never shipped.</span></div>
     </article>
 
     <article class="case" id="tracing-overhead">
       <span class="tag">LATENCY &middot; OBSERVABILITY</span>
-      <h3>The tracing tool was the bottleneck</h3>
-      <h4>Problem</h4>
-      <p>Every turn paid seconds of overhead that was not model time: p50 3.83 s, p90 10.56 s over 37 turns.</p>
+      <h3>The tracing tool was a large part of the overhead</h3>
+      <h4>Context</h4>
+      <p>Every turn paid non-model framework time: p50 3.83 s, p90 10.56 s over 37 turns.</p>
       <h4>Diagnosis and fix</h4>
-      <p>The observability callback re-serialised the whole conversation state about 44 times per turn. I summarised nested payloads and deferred the enqueue, keeping full traces.</p>
+      <p>The largest single cause was the tracing callback: it re-serialised the whole conversation state about 44 times per turn. I summarised nested payloads and deferred the work, keeping full traces readable. Measured in a benchmark; no production p50 was recorded after the fix.</p>
       <div class="delta"><span class="from">+679 to 930 ms</span><span class="to">+13 to 32 ms</span><span class="what">handler cost at 400 messages of history &middot; sub-graph 777 ms &rarr; 402 ms (407 ms with tracing off)</span></div>
     </article>
   </section>
