@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daniel Valle | LLM Reliability Engineer</title>
+<meta name="description" content="I fix LLM products that work in the demo and break in production. Measured case studies: latency, cost, silent failures, evals.">
+<meta property="og:title" content="Daniel Valle | LLM Reliability Engineer">
+<meta property="og:description" content="I fix LLM products that work in the demo and break in production.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbfaf8; --surface:#ffffff; --ink:#1b1d21; --muted:#5d6370; --line:#e6e3dd;
+  --accent:#0f6b5c; --accent-soft:#e3f1ee; --bad:#a34a2a; --good:#0f6b5c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --surface:#1a1d21; --ink:#e9e7e3; --muted:#a2a8b3; --line:#2b2f35;
+    --accent:#5cc6b1; --accent-soft:#1d2e2b; --bad:#e08a68; --good:#5cc6b1;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --surface:#1a1d21; --ink:#e9e7e3; --muted:#a2a8b3; --line:#2b2f35;
+  --accent:#5cc6b1; --accent-soft:#1d2e2b; --bad:#e08a68; --good:#5cc6b1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:3px}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+header.top{border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:16px;padding-bottom:16px;flex-wrap:wrap}
+.brand{font-weight:600}
+nav a{color:var(--muted);text-decoration:none;margin-left:16px;font-size:15px}
+nav a:hover{color:var(--ink)}
+.hero{padding:64px 0 40px}
+.eyebrow{font:500 13px/1 "JetBrains Mono",monospace;color:var(--accent);letter-spacing:.04em;text-transform:uppercase}
+h1{font-size:clamp(30px,5.2vw,46px);line-height:1.12;letter-spacing:-.02em;margin:14px 0 18px;font-weight:700}
+.lede{font-size:clamp(17px,2.2vw,19px);color:var(--muted);max-width:660px;margin:0}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.btn{display:inline-block;padding:11px 18px;border-radius:8px;font-weight:600;text-decoration:none;border:1px solid var(--line);color:var(--ink);background:var(--surface)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0d1513}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0d1513}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:44px 0 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.stat b{display:block;font-size:24px;letter-spacing:-.01em}
+.stat span{color:var(--muted);font-size:14px}
+section{padding:48px 0;border-top:1px solid var(--line)}
+h2{font-size:26px;letter-spacing:-.01em;margin:0 0 8px}
+.sub{color:var(--muted);margin:0 0 28px}
+.offers{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.offer{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.offer h3{margin:0 0 6px;font-size:17px}
+.offer p{margin:0;color:var(--muted);font-size:15px}
+.offer .price{display:block;margin-top:10px;font:500 13px/1.4 "JetBrains Mono",monospace;color:var(--accent)}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:16px;scroll-margin-top:16px}
+.case h3{margin:0 0 4px;font-size:19px;letter-spacing:-.01em}
+.case .tag{font:500 12px/1 "JetBrains Mono",monospace;color:var(--muted)}
+.case h4{margin:16px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.case p{margin:0}
+.case ul{margin:6px 0 0;padding-left:20px}
+.case li{margin:4px 0}
+.delta{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;background:var(--accent-soft);border-radius:8px}
+.delta .from{color:var(--bad);text-decoration:line-through;text-decoration-thickness:1px}
+.delta .to{color:var(--good);font-weight:700;font-size:20px}
+.delta .what{color:var(--muted);font-size:14px}
+code{font:500 14px "JetBrains Mono",monospace;background:var(--accent-soft);padding:1px 6px;border-radius:5px}
+.about p{margin:0 0 14px;max-width:700px}
+footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);font-size:14px}
+.theme{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:4px 8px;cursor:pointer;margin-left:16px;font:inherit;font-size:13px}
+@media (max-width:640px){
+  .stats{grid-template-columns:1fr}
+  .offers{grid-template-columns:1fr}
+  nav a{margin-left:12px}
+  nav .hide-sm{display:none}
+  .hero{padding:40px 0 28px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">Daniel Valle</div>
+  <nav><a href="#work" class="hide-sm">Case studies</a><a href="#offers">Services</a><a href="#contact">Contact</a><button class="theme" id="theme" aria-label="Toggle theme">Theme</button></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">LLM reliability engineer</div>
+    <h1>I fix LLM products that work in the demo and break in production.</h1>
+    <p class="lede">Reliability, evals, cost and latency for AI agents. Since 2025 I have built and run Flora, a multi-agent voice companion for seniors, in production: about 15 repositories, 18 containers, three LLM providers with automatic fallback, EU-hosted. Most of what I fixed returned HTTP 200.</p>
+    <div class="cta">
+      <a class="btn primary" href="mailto:danieldantemdv@gmail.com?subject=LLM%20audit">Book an audit</a>
+      <a class="btn" href="#work">See the numbers</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>6.5 s &rarr; 1.26 s</b><span>classifier p50, on every message</span></div>
+      <div class="stat"><b>&minus;61% tokens</b><span>one misplaced API parameter</span></div>
+      <div class="stat"><b>~5x input cost</b><span>caching silently dropped by a gateway</span></div>
+    </div>
+  </div>
+
+  <section id="offers">
+    <h2>Services</h2>
+    <p class="sub">Scoped, async, measured before and after. 10 to 15 hours a week, evenings CET, which overlaps US business hours.</p>
+    <div class="offers">
+      <div class="offer"><h3>LLM production audit</h3><p>A written report on your pipeline: silent failures, cost leaks, latency tail, eval gaps, and a prioritised fix list. Every finding measured.</p><span class="price">fixed price, from $1,500</span></div>
+      <div class="offer"><h3>Cost and latency reduction</h3><p>Before and after numbers on your real prompts. Token budgets, caching that actually hits, provider and model choice, request shape.</p><span class="price">fixed scope or hourly</span></div>
+      <div class="offer"><h3>Eval harness</h3><p>Labelled cases, repeated sampling and a measured noise floor, so a regression is a regression and a pass is a pass.</p><span class="price">fixed scope</span></div>
+      <div class="offer"><h3>Agent debugging and migration</h3><p>Unexpected agent behaviour, routing and structured-output failures, or a move to EU providers with measured parity and safe fallbacks.</p><span class="price">hourly</span></div>
+    </div>
+  </section>
+
+  <section id="work">
+    <h2>Case studies</h2>
+    <p class="sub">All measured on Flora in production. Vendors are described generically on purpose.</p>
+
+    <article class="case" id="classifier-latency">
+      <span class="tag">LATENCY</span>
+      <h3>A classifier on every message: p50 6.5 s to 1.26 s</h3>
+      <h4>Problem</h4>
+      <p>Every user message went through an intent and mood classifier before the reply could start. Median 6.5 seconds, paid on every turn.</p>
+      <h4>Diagnosis</h4>
+      <p>The call was decode-bound: latency tracked output length almost perfectly. The prompt forced a chain-of-thought into the JSON, and the model wrote that reasoning <em>after</em> the decision fields it was meant to inform. Seconds of tokens, informing nothing.</p>
+      <h4>What I did</h4>
+      <p>Moved the classifier to a faster model, removed the forced reasoning for that provider only, pinned a strict output schema, and added a fallback to the previous model on any error or empty reply, with an alert. Validated on a labelled harness of about 120 cases, sampled repeatedly to separate change from noise.</p>
+      <div class="delta"><span class="from">6,503 ms</span><span class="to">1.26 s</span><span class="what">p50 &middot; output 825 &rarr; ~230 tokens &middot; 0 fallbacks over the first ~60 production turns</span></div>
+    </article>
+
+    <article class="case" id="token-inflation">
+      <span class="tag">COST &middot; LATENCY</span>
+      <h3>One misplaced parameter made the model write 3x more</h3>
+      <h4>Problem</h4>
+      <p>The reply model was slow and hitting its timeout. Nothing was erroring.</p>
+      <h4>Diagnosis</h4>
+      <p>The reasoning-effort parameter sat at the top level of the request. On that provider, that position inflated generation instead of setting it. Nothing in the response said so; only the output token counts did.</p>
+      <h4>What I did</h4>
+      <p>A controlled A/B on the request shape (top-level, nested, absent) using real production prompts, then three independent quality gates before shipping.</p>
+      <ul>
+        <li>Worst-case prompt, n=5 per arm: median output 12,429 to 3,259 tokens. The distributions did not overlap.</li>
+        <li>Quality held: persona suite 15/15 vs 15/15, reasoning suites 25/29 vs 24/29, blind comparison on 11 real conversations at parity.</li>
+        <li>The trap: deleting the parameter instead of moving it returned empty answers in 4 of 5 short prompts.</li>
+      </ul>
+      <div class="delta"><span class="from">5,865 tok &middot; 21.5 s</span><span class="to">2,296 tok &middot; 9.1 s</span><span class="what">typical prompts, n=12 per arm: &minus;61% tokens, &minus;57% latency</span></div>
+    </article>
+
+    <article class="case" id="silent-200s">
+      <span class="tag">SILENT FAILURES &middot; COST</span>
+      <h3>Silent 200s: settings that never reached the model</h3>
+      <h4>Problem</h4>
+      <p>An LLM gateway accepted our requests, returned HTTP 200, and silently dropped settings that mattered.</p>
+      <h4>What I measured</h4>
+      <ul>
+        <li><b>Prompt caching.</b> Direct to the provider, 2,288 of 2,311 prompt tokens were served from cache on repeat calls. Through the gateway, three identical calls had byte-identical cost: the cache key never reached the upstream. About 5x the input price per call, on a path making 12 to 15 calls per user turn.</li>
+        <li><b>Latency.</b> n=20 per arm, interleaved: direct p50 4,813 ms vs gateway 6,232 ms (+29%).</li>
+        <li><b>Reasoning.</b> On one route, 12 different request shapes all returned zero reasoning, while the catalog claimed support. A catalog flag is not evidence; a live trace is.</li>
+        <li><b>Our own SDK layer</b> overwrote the cache key before sending. After the fix, cache hits went from 0% to 99% (4,030 of 4,072 tokens).</li>
+      </ul>
+      <h4>What I did</h4>
+      <p>Probes that verify each setting on the wire with production-sized prompts, tests that fail if a parameter silently stops working, and the direct route kept. This became <a href="https://github.com/danidante/llm-wire-check">llm-wire-check</a>.</p>
+      <div class="delta"><span class="from">0% cached</span><span class="to">99% cached</span><span class="what">after fixing the client layer &middot; gateway rejected on measured cost and latency</span></div>
+    </article>
+
+    <article class="case" id="eu-migration">
+      <span class="tag">MIGRATION &middot; RESILIENCE</span>
+      <h3>Off OpenAI and onto EU providers, with a three-host fallback chain</h3>
+      <h4>Problem</h4>
+      <p>Remove US model vendors from a path that handles seniors' personal conversations, without losing quality on safety-critical flows: medication reminders, consent, destructive task edits.</p>
+      <h4>What I did</h4>
+      <p>Migrated every GPT call site in phases with one rule: extraction and classification to Mistral, text generation to DeepSeek, each site with a safe fallback (block, skip, or keep the original) when the model fails. For the reply model, a fallback chain across three independent hosts that fits inside a hard turn deadline.</p>
+      <ul>
+        <li>Supervisor router: p50 379 ms, p95 465 ms. Adversarial routing set 29/30, fixing a stable safety gap the old model had.</li>
+        <li>Fallback chain, first production read (n=14, early sample): p90 26.5 s to 16.3 s.</li>
+      </ul>
+      <div class="delta"><span class="from">max 103.3 s</span><span class="to">max 24.9 s</span><span class="what">reply turn tail after the fallback chain &middot; OpenAI fully removed</span></div>
+    </article>
+
+    <article class="case" id="evals">
+      <span class="tag">EVALS</span>
+      <h3>Making the eval suite tell the truth</h3>
+      <h4>Problem</h4>
+      <p>The test suite reported regressions that were not there, and passes that were not real.</p>
+      <h4>What I found and fixed</h4>
+      <ul>
+        <li>32 suites, every safety suite included, failed all their cases because of one stale mock. Wiring, not a regression.</li>
+        <li>A suite passed 11/11 with zero real model calls: a missing key made the classifier return its default, and every "expect false" assertion passed vacuously.</li>
+        <li>Measured the noise floor: at n=9, borderline cases spread 0.44, above the 0.34 regression threshold. Added confirmation re-runs.</li>
+      </ul>
+      <div class="delta"><span class="from">9/9</span><span class="to">blocked</span><span class="what">the harness caught a faster prompt that took two safety cases from 9/9 to 0/9. It never shipped.</span></div>
+    </article>
+
+    <article class="case" id="tracing-overhead">
+      <span class="tag">LATENCY &middot; OBSERVABILITY</span>
+      <h3>The tracing tool was the bottleneck</h3>
+      <h4>Problem</h4>
+      <p>Every turn paid seconds of overhead that was not model time: p50 3.83 s, p90 10.56 s over 37 turns.</p>
+      <h4>Diagnosis and fix</h4>
+      <p>The observability callback re-serialised the whole conversation state about 44 times per turn. I summarised nested payloads and deferred the enqueue, keeping full traces.</p>
+      <div class="delta"><span class="from">+679 to 930 ms</span><span class="to">+13 to 32 ms</span><span class="what">handler cost at 400 messages of history &middot; sub-graph 777 ms &rarr; 402 ms (407 ms with tracing off)</span></div>
+    </article>
+  </section>
+
+  <section id="oss">
+    <h2>Open source</h2>
+    <p class="sub"><a href="https://github.com/danidante/llm-wire-check"><code>llm-wire-check</code></a> sends controlled request variants to any OpenAI-compatible endpoint and reports what actually changed: reasoning switches that are ignored, effort levels that inflate output, caches that never hit, models silently substituted. Because almost every one of these failures returns 200.</p>
+  </section>
+
+  <section class="about" id="about">
+    <h2>About</h2>
+    <p>I am Daniel Valle, a software engineer based in Portugal. I build Flora, a voice companion for seniors who live alone: she talks with them every day, in three Portuguese dialects, over WhatsApp and an Android app, and turns those conversations into follow-up for the people who care for them.</p>
+    <p>The backend is a TypeScript and NestJS system with a LangGraph supervisor routing to task, preference and companion agents, voice notes through speech-to-text and text-to-speech, and an LLM layer spread across DeepSeek and Mistral with automatic failover. I care about measured claims: every number on this page has a sample size behind it.</p>
+    <p>Languages: Portuguese (native, PT and BR), English (fluent).</p>
+  </section>
+
+  <section id="contact">
+    <h2>Contact</h2>
+    <p class="sub">Tell me what is slow, expensive or unpredictable. I will reply within a day.</p>
+    <div class="cta" style="margin-top:0">
+      <a class="btn primary" href="mailto:danieldantemdv@gmail.com">danieldantemdv@gmail.com</a>
+      <a class="btn" href="https://github.com/danidante">GitHub</a>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">Daniel Valle &middot; Portugal &middot; LLM reliability engineering</div></footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('theme');
+  try{var t=localStorage.getItem('theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    var next=cur==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
