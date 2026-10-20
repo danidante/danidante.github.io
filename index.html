@@ -60,6 +60,9 @@ h2{font-size:26px;letter-spacing:-.01em;margin:0 0 8px}
 .offer h3{margin:0 0 6px;font-size:17px}
 .offer p{margin:0;color:var(--muted);font-size:15px}
 .offer .price{display:block;margin-top:10px;font:500 13px/1.4 "JetBrains Mono",monospace;color:var(--accent)}
+.steps{margin:24px 0 0;padding-left:20px;color:var(--muted)}
+.steps li{margin:6px 0}
+.steps b{color:var(--ink);font-weight:600}
 .case{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:16px;scroll-margin-top:16px}
 .case h3{margin:0 0 4px;font-size:19px;letter-spacing:-.01em}
 .case .tag{font:500 12px/1 "JetBrains Mono",monospace;color:var(--muted)}
@@ -87,7 +90,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
 <body>
 <header class="top"><div class="wrap">
   <div class="brand">Daniel Valle</div>
-  <nav><a href="#work" class="hide-sm">Case studies</a><a href="#offers">Services</a><a href="#contact">Contact</a><button class="theme" id="theme" aria-label="Toggle theme">Theme</button></nav>
+  <nav><a href="#work" class="hide-sm">Case studies</a><a href="#offers">How I work</a><a href="#contact">Contact</a><button class="theme" id="theme" aria-label="Toggle theme">Theme</button></nav>
 </div></header>
 
 <main class="wrap">
@@ -96,7 +99,7 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
     <h1>I fix LLM products that work in the demo and break in production.</h1>
     <p class="lede">Reliability, evals, cost and latency for AI agents. Since 2025 I have built and run Flora, a multi-agent voice companion for seniors, in production: about 15 repositories, 18 containers, DeepSeek and Mistral models with host failover, EU-hosted. Most of what I fixed returned HTTP 200.</p>
     <div class="cta">
-      <a class="btn primary" href="mailto:danieldantemdv@gmail.com?subject=LLM%20audit">Book an audit</a>
+      <a class="btn primary" href="mailto:danieldantemdv@gmail.com?subject=Free%20look">Ask for a free look</a>
       <a class="btn" href="#work">See the numbers</a>
     </div>
     <div class="stats">
@@ -107,14 +110,21 @@ footer{border-top:1px solid var(--line);padding:32px 0 48px;color:var(--muted);f
   </div>
 
   <section id="offers">
-    <h2>Services</h2>
-    <p class="sub">Scoped, async, measured before and after. 10 to 15 hours a week, evenings CET, which overlaps US business hours.</p>
+    <h2>Fixed price. You pay only when it passes.</h2>
+    <p class="sub">Before I start, we write down what "done" means: a test, a working flow, or a number. You fund the milestone in escrow, and it is released only when that check passes. If it does not, you get it back. About 20 hours a week, async, with calls in the evening, Lisbon time.</p>
     <div class="offers">
-      <div class="offer"><h3>Production agent build</h3><p>An agent for your use case, built the way I built Flora: labelled test cases from day one, a safe fallback on every model call, tracing, and cost and latency measured on your prompts. WhatsApp and voice channels, Portuguese (PT and BR) and English. Phased, part-time delivery.</p><span class="price">fixed price per phase, from $2,500</span></div>
-      <div class="offer"><h3>LLM production audit</h3><p>A written report on your pipeline: silent failures, cost leaks, latency tail, eval gaps, and a prioritised fix list. Every finding measured.</p><span class="price">fixed price, from $1,500</span></div>
-      <div class="offer"><h3>Cost and latency reduction</h3><p>Before and after numbers on your real prompts. Token budgets, caching that actually hits, provider and model choice, request shape.</p><span class="price">fixed scope or hourly</span></div>
-      <div class="offer"><h3>Evals, debugging and migration</h3><p>An eval harness with a measured noise floor, fixes for unexpected agent behaviour and structured-output failures, or a move to EU-hosted models with measured parity and safe fallbacks.</p><span class="price">fixed scope or hourly</span></div>
+      <div class="offer"><h3>Fix and rescue</h3><p>A bug nobody has time for, a broken integration, a flaky job. Done means a test that reproduces it fails before and passes after, and you confirm it in your environment.</p><span class="price">fixed, from EUR 300</span></div>
+      <div class="offer"><h3>Build a feature or an MVP</h3><p>Java and Spring Boot, TypeScript and NestJS, APIs, payments and integrations, GCP. Weekly milestones, each with acceptance tests and a demo on your staging, each released on its own.</p><span class="price">fixed per milestone, from EUR 1,500</span></div>
+      <div class="offer"><h3>Cut cost or latency</h3><p>Cloud bill, LLM bill, slow endpoints. We agree the metric and measure a baseline first; the fee is released only if the number is reached, normalised for traffic.</p><span class="price">fixed fee, from EUR 1,500</span></div>
+      <div class="offer"><h3>AI agents and automation</h3><p>An agent, RAG over your documents, or an automated workflow, checked against an agreed set of your real cases at an agreed pass rate. You keep the test set.</p><span class="price">fixed per milestone, from EUR 1,500</span></div>
     </div>
+    <ol class="steps">
+      <li><b>Free look, up to 2 hours.</b> You show me the problem; I come back with how we would measure it and a fixed price.</li>
+      <li><b>One-page definition of done,</b> agreed by both: the check, where it runs, the deadline, what is excluded.</li>
+      <li><b>You fund the milestone in escrow.</b></li>
+      <li><b>I deliver,</b> with written updates at least twice a week.</li>
+      <li><b>We run the check together.</b> Pass: it is released. Fail: you get it back, and you keep the tests.</li>
+    </ol>
   </section>
 
   <section id="work">
